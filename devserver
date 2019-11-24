@@ -23,6 +23,7 @@ if [ ! -f .env ]; then
 fi
 
 CMD=$1
+shift
 if [ "$CMD" = "start" ]; then
   ./start.sh "$@"
 elif [ "$CMD" = "stop" ]; then

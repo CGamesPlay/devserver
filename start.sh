@@ -28,6 +28,8 @@ else
   DROPLET_ID=$(doctl compute droplet list $DROPLET_NAME --format "ID" --no-header)
 fi
 
+doctl compute firewall add-droplets $FIREWALL_ID --droplet-ids $DROPLET_ID
+
 DROPLET_ADDR=$(doctl compute droplet get $DROPLET_ID --format "PublicIPv4" --no-header)
 
 echo "Adding to DNS ($DROPLET_NAME.$DOMAIN_NAME -> $DROPLET_ADDR)"
