@@ -89,3 +89,11 @@ EOF
 systemctl daemon-reload
 systemctl start docker
 systemctl enable docker
+
+# This is a necessary compatibility layer between docker and ufw. It also
+# provides some extra commands that are required to expose the services.
+# https://github.com/chaifeng/ufw-docker
+wget -O /usr/local/bin/ufw-docker https://github.com/chaifeng/ufw-docker/raw/master/ufw-docker
+chmod +x /usr/local/bin/ufw-docker
+ufw-docker install
+ufw reload
