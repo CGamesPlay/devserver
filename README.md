@@ -32,9 +32,18 @@ Recreate and reconnect to a stopped server.
 2. Reconnect to wireguard.
 3. Set your `DOCKER_HOST` back to `10.254.0.1`.
 
+## Features
+
+**SSH** is exposed on the default port (22).
+
+**Wireguard** is exposed on port 51820. The client configuration is located at `~/wg0.conf`. The droplet will be `10.254.0.1`  on the VPN.
+
+**Docker** is exposed over TCP with `DOCKER_HOST` set to `tcp://10.254.0.1:2375`.
+
+**NFS** exposes `/home/ubuntu` on `10.254.0.1`. Mount from Mac OS using `nfs://10.254.0.1/home/ubuntu`.
+
 ## TODO
 
 - [ ] Automatic shutdown after inactivity.
-- [ ] Samba filesharing to use as docker volumes.
 - [ ] Workflow for docker-compose / easily created per-project docker images.
 - [ ] Integration with LetsEncrypt and nginx proxy.

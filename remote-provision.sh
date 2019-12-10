@@ -78,6 +78,10 @@ Endpoint = $HOSTNAME:51820
 EOF
 chown ubuntu:ubuntu /home/ubuntu/wg0.conf
 
+apt-get install -y nfs-kernel-server
+echo '/home/ubuntu    10.254.0.0/24(rw,async,no_subtree_check,all_squash,anonuid=1000,anongid=1000,insecure)' >> /etc/exports
+systemctl restart nfs-kernel-server
+
 apt install -y docker.io docker-compose
 usermod -aG docker ubuntu
 mkdir -p /etc/systemd/system/docker.service.d
