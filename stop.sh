@@ -34,8 +34,17 @@ if [ -z $DROPLET_ID ]; then
 else
   echo "Shutting down machine"
   doctl compute droplet-action shutdown $DROPLET_ID --wait
-  echo "Making a snapshot"
-  doctl compute droplet-action snapshot $DROPLET_ID --snapshot-name $DROPLET_NAME --wait
+
+  LATEST_SNAPSHOT=$(doctl compute snapshot list devserver --format "CreatedAt" --no-header | sort -r | head -n1)
+  # XXX - macos only, on error will always make new snapshot
+  MIN_SNAPSHOT_AGE=$(date -j -v-4H -u +"%Y-%m-%dT%H:%M:%SZ" || echo "9999-99-99")
+  if [ "$LATEST_SNAPSHOT" ">" "$MIN_SNAPSHOT_AGE" ]; then
+    echo "Reusing snapshot from $LATEST_SNAPSHOT"
+  else
+    echo "Making a snapshot"
+    doctl compute droplet-action snapshot $DROPLET_ID --snapshot-name $DROPLET_NAME --wait
+  fi
+
   echo "Deleting droplet"
   doctl compute droplet delete $DROPLET_ID -f
 fi
