@@ -15,9 +15,15 @@ fi
 cd "$(dirname "$(python -c "import os; print(os.path.realpath('$0'))")")"
 . .env
 
-DROPLET_ID=$(doctl compute droplet list $DROPLET_NAME --format "ID" --no-header)
-if [ ! -z "$DROPLET_ID" ]; then
-  echo "A droplet named $DROPLET_NAME is already running" >&2
+DROPLET_STATUS="$(doctl compute droplet list $DROPLET_NAME --format "ID,Status" --no-header)"
+if [ ! -z "$DROPLET_STATUS" ]; then
+  DROPLET_ID=${DROPLET_STATUS%% *}
+  if [[ "$DROPLET_STATUS" =~ \ off$ ]]; then
+    echo "Starting droplet named $DROPLET_NAME" >&2
+    doctl compute droplet-action power-on $DROPLET_ID --wait
+  else
+    echo "A droplet named $DROPLET_NAME is already running" >&2
+  fi
 else
   echo "Removing old SSH host key"
   ssh-keygen -R $DROPLET_NAME.$DOMAIN_NAME
