@@ -1,7 +1,7 @@
 #!/bin/bash
-## Creates a new droplet from an existing snapshot.
+## Spins up a devserver and configure it.
 
-set -e
+set -eu
 
 usage() {
   sed -ne "/^##/{s/^## *//"$'\n'"p"$'\n'"}" $0
@@ -13,37 +13,22 @@ if [ "$#" -gt 0 ]; then
 fi
 
 cd "$(dirname "$(python -c "import os; print(os.path.realpath('$0'))")")"
-. .env
 
-DROPLET_STATUS="$(doctl compute droplet list $DROPLET_NAME --format "ID,Status" --no-header)"
-if [ ! -z "$DROPLET_STATUS" ]; then
-  DROPLET_ID=${DROPLET_STATUS%% *}
-  if [[ "$DROPLET_STATUS" =~ \ off$ ]]; then
-    echo "Starting droplet named $DROPLET_NAME" >&2
-    doctl compute droplet-action power-on $DROPLET_ID --wait
-  else
-    echo "A droplet named $DROPLET_NAME is already running" >&2
-  fi
-else
-  echo "Removing old SSH host key"
-  ssh-keygen -R $DROPLET_NAME.$DOMAIN_NAME
+echo "Creating infrastructure"
+pulumi config set devserver:running true
+pulumi up --yes
 
-  SNAPSHOT_ID=$(doctl compute snapshot list devserver --format "CreatedAt,ID" --no-header | sort -r | awk 'NR == 1 { print $2 }')
-  echo "Creating droplet"
-  doctl compute droplet create devserver --image $SNAPSHOT_ID $DROPLET_CONFIG --wait
-  DROPLET_ID=$(doctl compute droplet list $DROPLET_NAME --format "ID" --no-header)
-fi
+INSTANCE_ADDR=$(pulumi stack output -j | jq -r .ip)
+DOMAIN_NAME=$(pulumi stack output -j | jq -r .domain)
 
-DROPLET_ADDR=$(doctl compute droplet get $DROPLET_ID --format "PublicIPv4" --no-header)
-
-echo "Adding to DNS ($DROPLET_NAME.$DOMAIN_NAME -> $DROPLET_ADDR)"
-RECORD_ID=$(doctl compute domain records list $DOMAIN_NAME --format "Name,ID" | awk '$1 == "'$DROPLET_NAME'" { print $2 }')
-if [ ! -z "$RECORD_ID" ]; then
-  doctl compute domain records delete $DOMAIN_NAME $RECORD_ID -f
-fi
-doctl compute domain records create $DOMAIN_NAME --record-name $DROPLET_NAME --record-type A --record-data $DROPLET_ADDR
+echo "Removing old SSH host key"
+ssh-keygen -R $DOMAIN_NAME
 
 echo "Adding to /etc/hosts"
-cat /etc/hosts | awk '$2 != "'$DROPLET_NAME.$DOMAIN_NAME'" { print $0 }' | sudo tee /etc/hosts~ >/dev/null
-echo $DROPLET_ADDR $DROPLET_NAME.$DOMAIN_NAME | sudo tee -a /etc/hosts~ >/dev/null
+cat /etc/hosts | awk '$2 != "'$DOMAIN_NAME'" { print $0 }' | sudo tee /etc/hosts~ >/dev/null
+echo $INSTANCE_ADDR $DOMAIN_NAME | sudo tee -a /etc/hosts~ >/dev/null
 sudo mv /etc/hosts~ /etc/hosts
+
+echo "Waiting for cloud-init to finish"
+sleep 30 # Takes some time to become reachable, cloud-init takes about 2 minutes anyways.
+ssh $DOMAIN_NAME -l ubuntu -o ControlPath=none -o StrictHostKeyChecking=no -- "cloud-init status -w"

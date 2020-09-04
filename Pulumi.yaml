@@ -1,0 +1,3 @@
+name: devserver
+runtime: nodejs
+description: A low-cost Docker host for a single user.

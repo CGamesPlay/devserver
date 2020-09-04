@@ -2,9 +2,9 @@
 ## Usage: devserver COMMAND
 ##
 ## Command can be:
-## - init           create a new devserver from a stock image
-## - start          create a new devserver from a previous snapshot
-## - stop           snapshot the existing devserver and destroy it
+## - init           set up your first devserver
+## - start          start the devserver
+## - stop           stop the devserver
 
 set -e
 
@@ -18,18 +18,15 @@ if [ "$#" -eq 0 ]; then
 fi
 
 cd "$(dirname "$(python -c "import os; print(os.path.realpath('$0'))")")"
-if [ ! -f .env ]; then
-  echo "Copy .env.example to .env and edit before running."
-fi
 
 CMD=$1
 shift
-if [ "$CMD" = "start" ]; then
+if [ "$CMD" = "init" ]; then
+  ./init.sh "$@"
+elif [ "$CMD" = "start" ]; then
   ./start.sh "$@"
 elif [ "$CMD" = "stop" ]; then
   ./stop.sh "$@"
-elif [ "$CMD" = "init" ]; then
-  ./init.sh "$@"
 elif [ "$CMD" = "--help" ]; then
   usage >&2
 else
