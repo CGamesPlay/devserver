@@ -1,7 +1,8 @@
 #!/bin/bash
 ## Create a new VPS and prepares it to be a remote docker host.
 
-set -e
+set -eu
+set -o pipefail
 
 usage() {
   sed -ne "/^##/{s/^## *//"$'\n'"p"$'\n'"}" $0
@@ -13,6 +14,7 @@ if [ "$#" -gt 0 ]; then
 fi
 
 cd "$(dirname "$(python -c "import os; print(os.path.realpath('$0'))")")"
+unset PULUMI_HOME
 
 pulumi stack init dev
 echo "Devserver domain name:"

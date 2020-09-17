@@ -1,7 +1,8 @@
 #!/bin/bash
 ## Shuts down the devserver and clean up the local system.
 
-set -e
+set -eu
+set -o pipefail
 
 usage() {
   sed -ne "/^##/{s/^## *//"$'\n'"p"$'\n'"}" $0
@@ -13,6 +14,7 @@ if [ "$#" -gt 0 ]; then
 fi
 
 cd "$(dirname "$(python -c "import os; print(os.path.realpath('$0'))")")"
+unset PULUMI_HOME
 
 DOMAIN_NAME=$(pulumi stack output -j | jq -r .domain)
 

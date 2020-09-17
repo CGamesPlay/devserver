@@ -2,6 +2,7 @@
 ## Spins up a devserver and configure it.
 
 set -eu
+set -o pipefail
 
 usage() {
   sed -ne "/^##/{s/^## *//"$'\n'"p"$'\n'"}" $0
@@ -13,6 +14,7 @@ if [ "$#" -gt 0 ]; then
 fi
 
 cd "$(dirname "$(python -c "import os; print(os.path.realpath('$0'))")")"
+unset PULUMI_HOME
 
 echo "Creating infrastructure"
 pulumi config set devserver:running true
