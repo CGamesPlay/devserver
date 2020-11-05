@@ -26,6 +26,44 @@ To save on costs, you can delete the server, but leave the data volume running.
 1. Run `./devserver stop` on your local machine.
 2. Run `./devserver start` to recreate the machine when needed. The existing volume will be reused.
 
+### Tips for MacOS users
+
+I additionally wrap the `devserver` script in my own custom scripts to make it easier to use on my configuration. I use fish shell, and I've manually set up WireGuard with the name "Dev Server".
+
+```fish
+function start_freelancing
+  echo "Starting Dev Server"
+  devserver start || return $status
+  echo "Connecting VPN"
+  networksetup -connectpppoeservice "Dev Server"
+  # Wait for WireGuard service to initialize. Does not verify connection.
+  while ! scutil --nc status "Dev Server" | head -1 | grep -q Connected; sleep 1; end
+  echo "Verifying connection"
+  for i in (seq 1 60)
+    if ping -c 1 10.254.0.1 > /dev/null
+      break
+    end
+  end
+  if ! ping -c 1 10.254.0.1 > /dev/null
+    echo "WireGuard is not connected"
+    return 1
+  end
+  echo "Waiting for docker"
+  while ! nc -z 10.254.0.1 2375; sleep 1; end
+  echo "Setting DOCKER_HOST (universally)"
+  set -Ux DOCKER_HOST tcp://10.254.0.1:2375
+end
+
+function stop_freelancing
+  echo "Unsetting DOCKER_HOST universally"
+  set -Ux DOCKER_HOST
+  echo "Disconnecting VPN"
+  networksetup -disconnectpppoeservice "Dev Server"
+  echo "Stopping Dev Server"
+  devserver stop
+end
+```
+
 ## Features
 
 **SSH** is exposed on the default port (22).
