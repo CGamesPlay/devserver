@@ -22,9 +22,6 @@ const SSH_PUBKEY_PATH = path.join(process.env.HOME!, ".ssh/id_rsa.pub");
 const GB = 1024 * 1024 * 1024;
 
 const cloudConfig = {
-  apt_sources: {
-    wireguard: { source: "ppa:wireguard/wireguard" }
-  },
   packages: ["docker.io", "docker-compose", "wireguard"],
   mounts: [["LABEL=data", "/mnt/data"]],
   swap: { filename: "/swapfile", size: "auto", maxsize: 4 * GB },
@@ -120,14 +117,16 @@ if (config.requireBoolean("running")) {
     name: "@",
     domain: domain.name,
     type: "A",
-    value: instance.ipv4Address
+    value: instance.ipv4Address,
+    ttl: 300
   });
 
   new DO.DnsRecord("sub-record", {
     name: "*",
     domain: domain.name,
     type: "A",
-    value: instance.ipv4Address
+    value: instance.ipv4Address,
+    ttl: 300
   });
 
   ip = instance.ipv4Address;
